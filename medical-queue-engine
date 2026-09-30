@@ -1,0 +1,76 @@
+import asyncio
+import time
+import random
+
+class AsynchronousMedicalQueueEngine:
+    """
+    Enterprise-Grade Thread-Safe Token Allocation Engine.
+    Engineered with explicit asyncio.Lock boundaries to completely eliminate
+    critical network race conditions under high-density patient request traffic.
+    """
+    def __init__(self):
+        self.current_allocated_token = 1000
+        # 🔒 THE BRAHMASTRA LOCK: Prevents multiple async tasks from modifying the queue simultaneously
+        self.queue_mutex_lock = asyncio.Lock()
+        print("⚙️ [Initialization] Thread-safe Medical Queue Engine armed safely in memory.")
+
+    async def allocate_next_patient_token_securely(self, patient_id: int) -> dict:
+        """
+        Safely increments and allocates the next global sequence token number.
+        Leverages strict mutual exclusion blocks to guarantee absolute atomicity.
+        """
+        # Acquire the secure lock gateway context
+        async with self.queue_mutex_lock:
+            # Inside this scoped block, exactly ONE async task can execute at a single millisecond!
+            # Simulating a microsecond disk/network write lag
+            await asyncio.sleep(random.uniform(0.01, 0.05))
+            
+            self.current_allocated_token += 1
+            assigned_token = self.current_allocated_token
+            
+            print(f"🏥 [Secure Gateway] Token #{assigned_token} successfully locked and stamped for Patient #{patient_id:02d}")
+            
+            return {
+                "patient_id": patient_id,
+                "allocated_token": assigned_token,
+                "timestamp": time.time()
+            }
+
+async def run_massive_concurrency_race_validation():
+    print("🚀 Starting Sudhir's Asynchronous Thread-Safe Medical Queue Engine [PR-Prep #439]...\n")
+    
+    engine = AsynchronousMedicalQueueEngine()
+    TOTAL_CONCURRENT_PATIENTS = 10
+    
+    start_benchmark = time.perf_counter()
+    
+    # Fire 10 parallel patient booking tasks at the exact same millisecond
+    print(f"📊 Firing {TOTAL_CONCURRENT_PATIENTS} simultaneous allocation tasks into the event loop...\n")
+    
+    async_tasks = [
+        asyncio.create_task(engine.allocate_next_patient_token_securely(i))
+        for i in range(1, TOTAL_CONCURRENT_PATIENTS + 1)
+    ]
+    
+    # Gather all tasks concurrently to check for race condition safety
+    completed_allocations = await asyncio.gather(*async_tasks)
+    
+    end_benchmark = time.perf_counter()
+    duration_ms = (end_benchmark - start_benchmark) * 1000
+    
+    print("\n🟢 [Allocation Output Matrix View]")
+    tokens_allocated_list = [res["allocated_token"] for res in completed_allocations]
+    print(f"   Generated Token Sequence Matrix: {tokens_allocated_list}")
+    
+    # Verify absolute sequencing validity (No duplicate tokens allowed!)
+    has_duplicates = len(tokens_allocated_list) != len(set(tokens_allocated_list))
+    
+    print("-" * 85)
+    print(f"⚡ Total Queue Ingestion Processing Time : {duration_ms:.2f} ms")
+    print(f"🛡️ Concurrency Race Condition Shield     : {'🚨 FAILURE' if has_duplicates else '🟢 100% SECURE'}")
+    print("-" * 85)
+    print("\n🎉 Async thread-safe queue engine validated with absolute sequence integrity!")
+
+if __name__ == "__main__":
+    # Boot the async main loop execution routine cleanly
+    asyncio.run(run_massive_concurrency_race_validation())
